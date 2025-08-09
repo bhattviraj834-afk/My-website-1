@@ -1,29 +1,37 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Aesthetic Website</title>
+    <title>My Creative Website</title>
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #f0f2f5;
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --background-color: #f7f9fc;
             --text-color: #333;
-            --sidebar-bg: #2c3e50;
-            --sidebar-hover-bg: #3b536b;
-            --font-family: 'Segoe UI', Arial, sans-serif;
+            --sidebar-bg: #1c2b53;
             --card-bg: #ffffff;
             --high-priority: #e74c3c;
             --medium-priority: #f39c12;
             --low-priority: #2ecc71;
+            --font-family: 'Poppins', sans-serif;
         }
+
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
         body {
             font-family: var(--font-family);
             margin: 0;
-            background-color: var(--secondary-color);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
             color: var(--text-color);
             text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         .sidebar {
@@ -37,7 +45,7 @@
             overflow-x: hidden;
             transition: transform 0.3s ease-in-out;
             transform: translateX(-100%);
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             text-align: left;
         }
 
@@ -47,10 +55,9 @@
         
         .close-btn {
             position: absolute;
-            top: 0;
+            top: 15px;
             right: 25px;
             font-size: 36px;
-            margin-left: 50px;
             color: #b0bec5;
             cursor: pointer;
             transition: color 0.2s;
@@ -63,8 +70,8 @@
         .sidebar-header {
             padding: 20px;
             text-align: center;
-            border-bottom: 1px solid #4a667f;
             color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .sidebar-header h2 { margin: 0; font-size: 1.5em; }
@@ -83,7 +90,7 @@
         }
 
         .sidebar a:hover {
-            background-color: var(--sidebar-hover-bg);
+            background-color: rgba(255,255,255,0.1);
             color: white;
         }
 
@@ -99,16 +106,17 @@
 
         .main-content {
             padding: 20px;
+            min-height: 100vh;
         }
 
         .header-bar {
-            position: relative;
             background-color: white;
             padding: 15px 20px;
             display: flex;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            z-index: 999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
 
         .toggle-btn {
@@ -123,14 +131,14 @@
             font-size: 1.5em;
             font-weight: 600;
             width: 100%;
+            text-align: center;
         }
 
         .page-content {
             display: none;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            background-color: var(--background-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             padding: 20px;
         }
         
@@ -140,28 +148,28 @@
 
         .tabs-container {
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             flex-wrap: wrap;
             margin-top: 30px;
         }
 
         .tab-button {
-            background-color: var(--primary-color);
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
             color: white;
             border: none;
             padding: 20px 0;
             font-size: 1.1em;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 10px;
             margin: 10px;
             width: calc(50% - 20px);
-            transition: background-color 0.2s, transform 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .tab-button:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
         
         .back-button {
@@ -180,16 +188,16 @@
             background-color: #7f8c8d;
         }
         
-        /* New styles for Tab 1 */
+        /* Task Manager Styles */
         .task-form-container {
             padding: 20px;
             border-bottom: 1px solid #eee;
             margin-bottom: 20px;
         }
 
-        .task-form-container input, .task-form-container select, .task-form-container button {
+        .task-form-container input, .task-form-container select, .task-form-container textarea, .task-form-container button {
             width: 80%;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
@@ -199,10 +207,11 @@
         }
 
         .task-form-container button {
-            background-color: var(--primary-color);
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
             color: white;
             cursor: pointer;
             border: none;
+            font-weight: 600;
         }
 
         .task-sections {
@@ -212,18 +221,19 @@
         }
 
         .task-column {
-            background-color: #ecf0f1;
-            padding: 10px;
-            border-radius: 8px;
+            background-color: #f7f9fc;
+            padding: 15px;
+            border-radius: 10px;
             width: calc(33.333% - 10px);
             margin: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .task-column h3 {
             margin-top: 0;
             padding-bottom: 10px;
-            border-bottom: 1px solid #bdc3c7;
+            border-bottom: 2px solid #ccc;
+            font-weight: 600;
         }
 
         .task-card {
@@ -231,50 +241,112 @@
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            text-align: left;
-            position: relative;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-
-        .task-card .priority {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .priority.High { background-color: var(--high-priority); }
-        .priority.Medium { background-color: var(--medium-priority); }
-        .priority.Low { background-color: var(--low-priority); }
-
-        .task-card h4 {
-            margin: 0 0 5px 0;
+        
+        .task-card-title {
+            font-weight: 600;
             font-size: 1.1em;
-        }
-
-        .task-card p {
             margin: 0;
-            font-size: 0.9em;
-            color: #777;
+            text-align: left;
         }
 
-        .task-actions button {
-            background-color: #95a5a6;
+        .task-card .info-btn {
+            background: transparent;
+            color: var(--primary-color);
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .task-card .info-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: left;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .close-modal-btn {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .task-details p {
+            margin: 5px 0;
+        }
+        .task-details span {
+            font-weight: 600;
+        }
+        .task-details .priority-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 15px;
+            color: white;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .priority-tag.High { background-color: var(--high-priority); }
+        .priority-tag.Medium { background-color: var(--medium-priority); }
+        .priority-tag.Low { background-color: var(--low-priority); }
+
+        .task-actions-modal button {
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 8px 12px;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 10px;
-            margin-right: 5px;
-            transition: background-color 0.2s;
+            margin-top: 15px;
+            transition: transform 0.2s;
         }
 
-        .task-actions button.delete-btn {
+        .task-actions-modal button:hover {
+            transform: translateY(-2px);
+        }
+
+        .task-actions-modal .delete-btn {
             background-color: var(--high-priority);
         }
+        
     </style>
 </head>
 <body>
@@ -301,7 +373,7 @@
 <div id="main">
     <div class="header-bar">
         <span class="toggle-btn" onclick="toggleNav()">☰</span>
-        <h1 class="header-title">My Aesthetic Website</h1>
+        <h1 class="header-title">My Creative Website</h1>
     </div>
 
     <div id="home" class="page-content active">
@@ -319,6 +391,7 @@
         <h2>Task Manager</h2>
         <div class="task-form-container">
             <input type="text" id="taskName" placeholder="Task Name">
+            <textarea id="taskDescription" placeholder="Task Description" rows="3"></textarea>
             <label for="startDate">Start Date:</label>
             <input type="date" id="startDate">
             <label for="endDate">End Date:</label>
@@ -331,7 +404,7 @@
             <button onclick="addTask()">Add Task</button>
         </div>
         
-        <div class="task-sections">
+        <div class="task-sections container">
             <div class="task-column">
                 <h3>To be started</h3>
                 <div id="toDoTasks"></div>
@@ -367,6 +440,21 @@
     </div>
 </div>
 
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-task-name"></h2>
+            <span class="close-modal-btn" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="task-details">
+            <p><span>Description:</span> <span id="modal-task-description"></span></p>
+            <p><span>Start Date:</span> <span id="modal-start-date"></span></p>
+            <p><span>End Date:</span> <span id="modal-end-date"></span></p>
+            <p><span>Priority:</span> <span id="modal-priority"></span></p>
+        </div>
+    </div>
+</div>
+
 <script>
     function toggleNav() {
         document.getElementById("sidebar").classList.toggle('active');
@@ -395,8 +483,11 @@
     updateDateTime();
     
     // Task Manager Functions
+    let tasks = [];
+
     function addTask() {
         const taskName = document.getElementById('taskName').value;
+        const taskDescription = document.getElementById('taskDescription').value;
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         const priority = document.getElementById('taskPriority').value;
@@ -406,42 +497,92 @@
             return;
         }
 
-        const taskCard = document.createElement('div');
-        taskCard.classList.add('task-card');
-        taskCard.innerHTML = `
-            <div class="priority ${priority}"></div>
-            <h4>${taskName}</h4>
-            <p>Start: ${startDate || 'N/A'}</p>
-            <p>End: ${endDate || 'N/A'}</p>
-            <div class="task-actions">
-                <button onclick="moveTask(this, 'inProgress')">In Progress</button>
-                <button onclick="moveTask(this, 'completed')">Completed</button>
-                <button class="delete-btn" onclick="deleteTask(this)">Delete</button>
-            </div>
-        `;
+        const task = {
+            id: Date.now(),
+            name: taskName,
+            description: taskDescription,
+            startDate: startDate,
+            endDate: endDate,
+            priority: priority,
+            status: 'toDo'
+        };
 
-        document.getElementById('toDoTasks').appendChild(taskCard);
+        tasks.push(task);
+        renderTasks();
 
-        // Clear the form
         document.getElementById('taskName').value = '';
+        document.getElementById('taskDescription').value = '';
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
     }
 
-    function moveTask(button, targetColumn) {
-        const taskCard = button.closest('.task-card');
-        if (targetColumn === 'inProgress') {
-            document.getElementById('inProgressTasks').appendChild(taskCard);
-        } else if (targetColumn === 'completed') {
-            document.getElementById('completedTasks').appendChild(taskCard);
-        }
-        
-        // Hide the moved button to avoid confusion
-        button.style.display = 'none';
+    function renderTasks() {
+        document.getElementById('toDoTasks').innerHTML = '';
+        document.getElementById('inProgressTasks').innerHTML = '';
+        document.getElementById('completedTasks').innerHTML = '';
+
+        tasks.forEach(task => {
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('task-card');
+            taskCard.innerHTML = `
+                <div class="task-card-title">${task.name}</div>
+                <button class="info-btn" onclick="showTaskDetails(${task.id})">i</button>
+            `;
+
+            if (task.status === 'toDo') {
+                document.getElementById('toDoTasks').appendChild(taskCard);
+            } else if (task.status === 'inProgress') {
+                document.getElementById('inProgressTasks').appendChild(taskCard);
+            } else if (task.status === 'completed') {
+                document.getElementById('completedTasks').appendChild(taskCard);
+            }
+        });
     }
 
-    function deleteTask(button) {
-        button.closest('.task-card').remove();
+    function showTaskDetails(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            document.getElementById('modal-task-name').textContent = task.name;
+            document.getElementById('modal-task-description').textContent = task.description || 'No description provided.';
+            document.getElementById('modal-start-date').textContent = task.startDate || 'N/A';
+            document.getElementById('modal-end-date').textContent = task.endDate || 'N/A';
+            document.getElementById('modal-priority').innerHTML = `<span class="priority-tag ${task.priority}">${task.priority}</span>`;
+
+            // Clear previous action buttons and add new ones
+            const actionContainer = document.querySelector('#taskModal .task-actions-modal');
+            if (actionContainer) actionContainer.remove();
+
+            const newActionContainer = document.createElement('div');
+            newActionContainer.classList.add('task-actions-modal');
+            newActionContainer.innerHTML = `
+                <button onclick="moveTaskFromModal(${task.id}, 'toDo')">To be started</button>
+                <button onclick="moveTaskFromModal(${task.id}, 'inProgress')">In Progress</button>
+                <button onclick="moveTaskFromModal(${task.id}, 'completed')">Completed</button>
+                <button class="delete-btn" onclick="deleteTaskFromModal(${task.id})">Delete</button>
+            `;
+            document.querySelector('#taskModal .modal-content').appendChild(newActionContainer);
+
+            document.getElementById('taskModal').style.display = 'block';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('taskModal').style.display = 'none';
+    }
+
+    function moveTaskFromModal(taskId, newStatus) {
+        const taskIndex = tasks.findIndex(t => t.id === taskId);
+        if (taskIndex !== -1) {
+            tasks[taskIndex].status = newStatus;
+            renderTasks();
+            closeModal();
+        }
+    }
+
+    function deleteTaskFromModal(taskId) {
+        tasks = tasks.filter(t => t.id !== taskId);
+        renderTasks();
+        closeModal();
     }
 </script>
 
