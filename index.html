@@ -624,6 +624,17 @@
     let currentUser = null;
     let users = JSON.parse(localStorage.getItem('users')) || {};
 
+    // Pre-populate with a test user if none exist
+    if (Object.keys(users).length === 0) {
+        users['test@example.com'] = {
+            name: 'Test User',
+            email: 'test@example.com',
+            password: 'password',
+            tasks: []
+        };
+        localStorage.setItem('users', JSON.stringify(users));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const loggedInUser = sessionStorage.getItem('loggedInUser');
         if (loggedInUser) {
@@ -641,13 +652,4 @@
 
     function showMainApp() {
         document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('main-app').style.display = 'block';
-        document.getElementById('userNameDisplay').textContent = currentUser.name;
-        // Re-render tasks for the logged in user
-        renderTasks();
-    }
-
-    function login() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-
+        document.getElementById('main-app').style.displa
