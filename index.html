@@ -1,30 +1,39 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Interactive Website</title>
+    <title>My Aesthetic Website</title>
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #f0f2f5;
+            --text-color: #333;
+            --sidebar-bg: #2c3e50;
+            --sidebar-hover-bg: #3b536b;
+            --font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: var(--font-family);
             margin: 0;
-            background-color: #f0f2f5;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            transition: all 0.5s;
         }
 
         .sidebar {
             height: 100%;
             width: 250px;
             position: fixed;
-            z-index: 1;
+            z-index: 100;
             top: 0;
             left: 0;
-            background-color: #2c3e50;
+            background-color: var(--sidebar-bg);
             overflow-x: hidden;
-            transition: 0.5s;
-            padding-top: 60px;
+            transition: transform 0.3s ease-in-out;
             transform: translateX(-100%);
-            color: white;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
         }
 
         .sidebar.active {
@@ -32,137 +41,151 @@
         }
 
         .sidebar-header {
-            padding: 8px 16px;
+            padding: 20px;
             text-align: center;
             border-bottom: 1px solid #4a667f;
-            margin-bottom: 20px;
+            color: white;
         }
 
+        .sidebar-header h2 { margin: 0; font-size: 1.5em; }
+        .sidebar-header p { margin: 5px 0 0; font-size: 0.9em; opacity: 0.7; }
+
+        .sidebar-nav { padding-top: 20px; }
+
         .sidebar a {
-            padding: 12px 16px;
+            padding: 15px 25px;
             text-decoration: none;
-            font-size: 18px;
+            font-size: 16px;
             color: #b0bec5;
             display: block;
-            transition: 0.3s;
-            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
         }
 
         .sidebar a:hover {
-            background-color: #4a667f;
+            background-color: var(--sidebar-hover-bg);
             color: white;
         }
 
+        .datetime-container {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1em;
+            color: #b0bec5;
+        }
+
+        .datetime-container #date { font-weight: bold; }
+        .datetime-container #time { font-size: 0.9em; }
+
         .main-content {
-            transition: margin-left .5s;
-            padding: 16px;
+            padding: 20px;
+            transition: margin-left 0.3s;
         }
 
         .header-bar {
-            width: 100%;
-            height: 60px;
-            background-color: #34495e;
+            background-color: white;
+            padding: 15px 20px;
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .toggle-btn {
-            font-size: 30px;
+            font-size: 28px;
             cursor: pointer;
-            color: white;
-            padding-right: 16px;
+            color: var(--primary-color);
+            margin-right: 20px;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .page-content {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            padding: 20px;
+        }
+        
+        .page-content.active {
+            display: block;
         }
 
         .tabs-container {
             display: flex;
             justify-content: space-around;
             flex-wrap: wrap;
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
         .tab-button {
-            background-color: #3498db;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 20px 40px;
-            font-size: 1.2em;
+            padding: 20px 30px;
+            font-size: 1.1em;
             cursor: pointer;
             border-radius: 8px;
             margin: 10px;
-            transition: background-color 0.3s;
+            transition: background-color 0.2s, transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .tab-button:hover {
             background-color: #2980b9;
+            transform: translateY(-2px);
         }
         
-        .page-content {
-            display: none;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-top: 20px;
-        }
-        
-        .page-content.active {
-            display: block;
-        }
-        
-        .datetime-container {
-            text-align: center;
-            font-size: 1.2em;
-            margin-bottom: 20px;
-            color: #b0bec5;
-        }
-        
-        .name-admin {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .name-admin h2 {
-            margin: 0;
-            font-size: 1.5em;
-        }
-
-        .name-admin p {
-            margin: 5px 0 0 0;
+        .back-button {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
             font-size: 1em;
-            color: #b0bec5;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.2s;
         }
-        
+
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
 
 <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>My name</h2>
+        <p>Admin</p>
+    </div>
     <div class="datetime-container">
         <div id="date"></div>
         <div id="time"></div>
     </div>
-    <div class="name-admin">
-        <h2>My name</h2>
-        <p>Admin</p>
-    </div>
-    <a onclick="showPage('home')">Home</a>
-    <a onclick="showPage('tab1')">Tab 1</a>
-    <a onclick="showPage('tab2')">Tab 2</a>
-    <a onclick="showPage('tab3')">Tab 3</a>
-    <a onclick="showPage('tab4')">Tab 4</a>
+    <nav class="sidebar-nav">
+        <a onclick="showPage('home')">Home</a>
+        <a onclick="showPage('tab1')">Tab 1</a>
+        <a onclick="showPage('tab2')">Tab 2</a>
+        <a onclick="showPage('tab3')">Tab 3</a>
+        <a onclick="showPage('tab4')">Tab 4</a>
+    </nav>
 </div>
 
 <div id="main">
     <div class="header-bar">
         <span class="toggle-btn" onclick="toggleNav()">☰</span>
-        <h2>My Interactive Website</h2>
+        <h1 class="header-title">My Aesthetic Website</h1>
     </div>
 
     <div id="home" class="page-content active">
         <h1>Welcome!</h1>
+        <p>Select a tab to navigate.</p>
         <div class="tabs-container">
             <button class="tab-button" onclick="showPage('tab1')">Tab 1</button>
             <button class="tab-button" onclick="showPage('tab2')">Tab 2</button>
@@ -172,23 +195,27 @@
     </div>
 
     <div id="tab1" class="page-content">
-        <h1>This is Tab 1</h1>
-        <p>Content for Tab 1 goes here.</p>
+        <h2>Tab 1</h2>
+        <p>This is the content for Tab 1.</p>
+        <button class="back-button" onclick="goBack()">Back</button>
     </div>
 
     <div id="tab2" class="page-content">
-        <h1>This is Tab 2</h1>
-        <p>Content for Tab 2 goes here.</p>
+        <h2>Tab 2</h2>
+        <p>This is the content for Tab 2.</p>
+        <button class="back-button" onclick="goBack()">Back</button>
     </div>
 
     <div id="tab3" class="page-content">
-        <h1>This is Tab 3</h1>
-        <p>Content for Tab 3 goes here.</p>
+        <h2>Tab 3</h2>
+        <p>This is the content for Tab 3.</p>
+        <button class="back-button" onclick="goBack()">Back</button>
     </div>
 
     <div id="tab4" class="page-content">
-        <h1>This is Tab 4</h1>
-        <p>Content for Tab 4 goes here.</p>
+        <h2>Tab 4</h2>
+        <p>This is the content for Tab 4.</p>
+        <button class="back-button" onclick="goBack()">Back</button>
     </div>
 </div>
 
@@ -210,13 +237,14 @@
         const pages = document.querySelectorAll('.page-content');
         pages.forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        toggleNav(); // Close the sidebar after a link is clicked
+        toggleNav();
     }
 
-    // Update date and time every second
-    setInterval(updateDateTime, 1000);
+    function goBack() {
+        showPage('home');
+    }
 
-    // Initial call to display date and time immediately
+    setInterval(updateDateTime, 1000);
     updateDateTime();
 </script>
 
