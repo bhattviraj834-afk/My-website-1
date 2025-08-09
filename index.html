@@ -19,14 +19,13 @@
             margin: 0;
             background-color: var(--secondary-color);
             color: var(--text-color);
-            transition: all 0.5s;
         }
 
         .sidebar {
             height: 100%;
             width: 250px;
             position: fixed;
-            z-index: 100;
+            z-index: 1000; /* Increased z-index to be on top */
             top: 0;
             left: 0;
             background-color: var(--sidebar-bg);
@@ -38,6 +37,21 @@
 
         .sidebar.active {
             transform: translateX(0);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+            color: #b0bec5;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: white;
         }
 
         .sidebar-header {
@@ -59,6 +73,7 @@
             color: #b0bec5;
             display: block;
             transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
         }
 
         .sidebar a:hover {
@@ -78,15 +93,16 @@
 
         .main-content {
             padding: 20px;
-            transition: margin-left 0.3s;
         }
 
         .header-bar {
+            position: relative;
             background-color: white;
             padding: 15px 20px;
             display: flex;
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 999; /* Lower z-index than sidebar */
         }
 
         .toggle-btn {
@@ -117,7 +133,7 @@
 
         .tabs-container {
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             flex-wrap: wrap;
             margin-top: 30px;
         }
@@ -126,11 +142,12 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 20px 30px;
+            padding: 20px 0; /* Adjusted padding for better spacing */
             font-size: 1.1em;
             cursor: pointer;
             border-radius: 8px;
             margin: 10px;
+            width: calc(50% - 20px); /* New style for two tabs per row */
             transition: background-color 0.2s, transform 0.2s;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -160,6 +177,7 @@
 <body>
 
 <div class="sidebar" id="sidebar">
+    <a href="javascript:void(0)" class="close-btn" onclick="toggleNav()">×</a>
     <div class="sidebar-header">
         <h2>My name</h2>
         <p>Admin</p>
@@ -237,7 +255,6 @@
         const pages = document.querySelectorAll('.page-content');
         pages.forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        toggleNav();
     }
 
     function goBack() {
