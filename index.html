@@ -490,6 +490,7 @@
             <a href="#" onclick="alert('This is a simulated feature. In a real app, you would be sent a reset link via email.'); return false;">Forgot password?</a>
             <a href="#" onclick="showSignupModal(); return false;">New user? Sign Up!</a>
         </div>
+        <button onclick="bypassAuth()" style="margin-top: 20px;">Go to Website</button>
     </div>
 </div>
 
@@ -625,7 +626,7 @@
     let users = JSON.parse(localStorage.getItem('users')) || {};
 
     // Pre-populate with a test user if none exist
-    if (Object.keys(users).length === 0) {
+    if (!users['test@example.com']) {
         users['test@example.com'] = {
             name: 'Test User',
             email: 'test@example.com',
@@ -651,5 +652,4 @@
     }
 
     function showMainApp() {
-        document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('main-app').style.displa
+        document.getElementById('auth-section
