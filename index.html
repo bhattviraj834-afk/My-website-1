@@ -12,6 +12,10 @@
             --sidebar-bg: #2c3e50;
             --sidebar-hover-bg: #3b536b;
             --font-family: 'Segoe UI', Arial, sans-serif;
+            --card-bg: #ffffff;
+            --high-priority: #e74c3c;
+            --medium-priority: #f39c12;
+            --low-priority: #2ecc71;
         }
 
         body {
@@ -19,13 +23,14 @@
             margin: 0;
             background-color: var(--secondary-color);
             color: var(--text-color);
+            text-align: center;
         }
 
         .sidebar {
             height: 100%;
             width: 250px;
             position: fixed;
-            z-index: 1000; /* Increased z-index to be on top */
+            z-index: 1000;
             top: 0;
             left: 0;
             background-color: var(--sidebar-bg);
@@ -33,6 +38,7 @@
             transition: transform 0.3s ease-in-out;
             transform: translateX(-100%);
             box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            text-align: left;
         }
 
         .sidebar.active {
@@ -102,7 +108,7 @@
             display: flex;
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            z-index: 999; /* Lower z-index than sidebar */
+            z-index: 999;
         }
 
         .toggle-btn {
@@ -116,6 +122,7 @@
             margin: 0;
             font-size: 1.5em;
             font-weight: 600;
+            width: 100%;
         }
 
         .page-content {
@@ -142,12 +149,12 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 20px 0; /* Adjusted padding for better spacing */
+            padding: 20px 0;
             font-size: 1.1em;
             cursor: pointer;
             border-radius: 8px;
             margin: 10px;
-            width: calc(50% - 20px); /* New style for two tabs per row */
+            width: calc(50% - 20px);
             transition: background-color 0.2s, transform 0.2s;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -171,6 +178,102 @@
 
         .back-button:hover {
             background-color: #7f8c8d;
+        }
+        
+        /* New styles for Tab 1 */
+        .task-form-container {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .task-form-container input, .task-form-container select, .task-form-container button {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .task-form-container button {
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        .task-sections {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .task-column {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            width: calc(33.333% - 10px);
+            margin: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .task-column h3 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .task-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: left;
+            position: relative;
+        }
+
+        .task-card .priority {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .priority.High { background-color: var(--high-priority); }
+        .priority.Medium { background-color: var(--medium-priority); }
+        .priority.Low { background-color: var(--low-priority); }
+
+        .task-card h4 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+        }
+
+        .task-card p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #777;
+        }
+
+        .task-actions button {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .task-actions button.delete-btn {
+            background-color: var(--high-priority);
         }
     </style>
 </head>
@@ -213,8 +316,35 @@
     </div>
 
     <div id="tab1" class="page-content">
-        <h2>Tab 1</h2>
-        <p>This is the content for Tab 1.</p>
+        <h2>Task Manager</h2>
+        <div class="task-form-container">
+            <input type="text" id="taskName" placeholder="Task Name">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate">
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate">
+            <select id="taskPriority">
+                <option value="Low">Low Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="High">High Priority</option>
+            </select>
+            <button onclick="addTask()">Add Task</button>
+        </div>
+        
+        <div class="task-sections">
+            <div class="task-column">
+                <h3>To be started</h3>
+                <div id="toDoTasks"></div>
+            </div>
+            <div class="task-column">
+                <h3>In Progress</h3>
+                <div id="inProgressTasks"></div>
+            </div>
+            <div class="task-column">
+                <h3>Completed</h3>
+                <div id="completedTasks"></div>
+            </div>
+        </div>
         <button class="back-button" onclick="goBack()">Back</button>
     </div>
 
@@ -263,6 +393,56 @@
 
     setInterval(updateDateTime, 1000);
     updateDateTime();
+    
+    // Task Manager Functions
+    function addTask() {
+        const taskName = document.getElementById('taskName').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const priority = document.getElementById('taskPriority').value;
+
+        if (taskName === '') {
+            alert('Task name cannot be empty!');
+            return;
+        }
+
+        const taskCard = document.createElement('div');
+        taskCard.classList.add('task-card');
+        taskCard.innerHTML = `
+            <div class="priority ${priority}"></div>
+            <h4>${taskName}</h4>
+            <p>Start: ${startDate || 'N/A'}</p>
+            <p>End: ${endDate || 'N/A'}</p>
+            <div class="task-actions">
+                <button onclick="moveTask(this, 'inProgress')">In Progress</button>
+                <button onclick="moveTask(this, 'completed')">Completed</button>
+                <button class="delete-btn" onclick="deleteTask(this)">Delete</button>
+            </div>
+        `;
+
+        document.getElementById('toDoTasks').appendChild(taskCard);
+
+        // Clear the form
+        document.getElementById('taskName').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+    }
+
+    function moveTask(button, targetColumn) {
+        const taskCard = button.closest('.task-card');
+        if (targetColumn === 'inProgress') {
+            document.getElementById('inProgressTasks').appendChild(taskCard);
+        } else if (targetColumn === 'completed') {
+            document.getElementById('completedTasks').appendChild(taskCard);
+        }
+        
+        // Hide the moved button to avoid confusion
+        button.style.display = 'none';
+    }
+
+    function deleteTask(button) {
+        button.closest('.task-card').remove();
+    }
 </script>
 
 </body>
