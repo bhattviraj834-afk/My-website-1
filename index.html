@@ -952,12 +952,12 @@
         updateDateTime();
     });
 
-    function showAuthSection() {
+    window.showAuthSection = function() {
         document.getElementById('auth-section').style.display = 'flex';
         document.getElementById('main-app').style.display = 'none';
     }
 
-    function showMainApp() {
+    window.showMainApp = function() {
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('userNameDisplay').textContent = currentUser.name;
@@ -968,7 +968,7 @@
         updateDateTime();
     }
     
-    function setupRealtimeListeners() {
+    window.setupRealtimeListeners = function() {
         // Real-time listener for cadets
         const cadetsRef = collection(db, 'cadets');
         onSnapshot(cadetsRef, (snapshot) => {
@@ -1338,3 +1338,4 @@
 
 </body>
 </html>
+
