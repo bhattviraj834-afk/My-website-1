@@ -39,12 +39,10 @@
             padding: 20px;
         }
 
-        /* Login Page Styles */
         .auth-container {
             display: none;
         }
 
-        /* Main App Styles */
         .main-app {
             display: block;
         }
@@ -772,38 +770,6 @@
     </div>
 </div>
 
-<!-- Sign-up Modal -->
-<div id="signupModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Sign Up</h2>
-            <span class="close-modal-btn" onclick="closeSignupModal()">&times;</span>
-        </div>
-        <input type="text" id="signupName" placeholder="Enter Your Name">
-        <input type="email" id="signupEmail" placeholder="Enter Email">
-        <input type="password" id="signupPassword" placeholder="Create Password">
-        <input type="password" id="signupRePassword" placeholder="Re-enter Password">
-        <div style="text-align: left; width: 90%; margin: 0 auto;">
-            <label for="signupRole">Role:</label>
-            <select id="signupRole" style="width: 100%; text-align: left;">
-                <option value="User">User</option>
-                <option value="Admin">Admin</option>
-                <option value="Alumni">Alumni</option>
-            </select>
-        </div>
-        <div style="text-align: left; width: 90%; margin: 10px auto;">
-            <label for="signupBatch">Batch:</label>
-            <select id="signupBatch" style="width: 100%; text-align: left;">
-                <option value="SD 2026">SD 2026</option>
-                <option value="SD 2027">SD 2027</option>
-                <option value="SW 2026">SW 2026</option>
-                <option value="SW 2027">SW 2027</option>
-            </select>
-        </div>
-        <button onclick="signup()">Confirm</button>
-    </div>
-</div>
-
 <!-- Add Cadet Modal -->
 <div id="addCadetModal" class="modal">
     <div class="modal-content">
@@ -821,7 +787,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, getRedirectResult, GoogleAuthProvider, signInWithRedirect } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { getAuth, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, deleteDoc, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
     // Your Firebase configuration
@@ -845,51 +811,33 @@
     let attendanceData = {};
     let attendanceDate = null;
     let selectedCadetList = [];
+    let currentPage = 'home';
 
     document.addEventListener('DOMContentLoaded', () => {
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    currentUser = userDocSnap.data();
-                    const tasksRef = collection(db, 'tasks');
-                    const userTasksQuery = query(tasksRef, where('userId', '==', currentUser.uid));
-                    onSnapshot(userTasksQuery, (snapshot) => {
-                        currentUser.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        renderTasks();
-                    });
-                    showMainApp();
-                } else {
-                    auth.signOut();
-                }
-            } else {
-                currentUser = null;
-                showAuthSection();
-            }
+        signInAnonymously(auth).then(async (result) => {
+            currentUser = {
+                uid: result.user.uid,
+                name: "Guest User",
+                role: "User",
+                batch: "N/A"
+            };
+            showMainApp();
+            setupRealtimeListeners();
+            updateDateTime();
+        }).catch((error) => {
+            console.error("Anonymous sign-in failed:", error);
+            document.getElementById('main-app').innerHTML = '<h2>Error loading application.</h2>';
         });
-        setupRealtimeListeners();
-        updateDateTime();
     });
 
-    // Make functions globally accessible
-    window.showAuthSection = function() {
-        document.getElementById('auth-section').style.display = 'flex';
-        document.getElementById('main-app').style.display = 'none';
-    }
-
-    window.showMainApp = function() {
-        document.getElementById('auth-section').style.display = 'none';
+    function showMainApp() {
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('userNameDisplay').textContent = currentUser.name;
         document.getElementById('userRoleBatchDisplay').textContent = `${currentUser.role} - ${currentUser.batch}`;
-        renderTasks();
-        renderCadets();
-        renderAttendanceHistory();
-        updateDateTime();
+        showPage(currentPage);
     }
     
-    window.setupRealtimeListeners = function() {
+    function setupRealtimeListeners() {
         const cadetsRef = collection(db, 'cadets');
         onSnapshot(cadetsRef, (snapshot) => {
             const newCadets = {
@@ -902,7 +850,13 @@
                 }
             });
             cadets = newCadets;
-            if (currentUser) renderCadets();
+            renderCadets();
+        });
+
+        const tasksRef = collection(db, 'tasks');
+        onSnapshot(tasksRef, (snapshot) => {
+            currentUser.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderTasks();
         });
 
         const attendanceRef = collection(db, 'attendance');
@@ -915,72 +869,6 @@
                 renderAttendanceHistory();
             }
         });
-    }
-
-    window.login = async function() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            alert(`Login failed: ${error.message}`);
-        }
-    }
-
-    window.showSignupModal = function() {
-        document.getElementById('signupModal').style.display = 'block';
-    }
-
-    window.closeSignupModal = function() {
-        document.getElementById('signupModal').style.display = 'none';
-    }
-
-    window.signup = async function() {
-        const name = document.getElementById('signupName').value;
-        const email = document.getElementById('signupEmail').value;
-        const password = document.getElementById('signupPassword').value;
-        const rePassword = document.getElementById('signupRePassword').value;
-        const role = document.getElementById('signupRole').value;
-        const batch = document.getElementById('signupBatch').value;
-
-        if (!name || !email || !password || !rePassword || !role || !batch) {
-            alert('Please fill in all fields.');
-            return;
-        }
-
-        if (password !== rePassword) {
-            alert('Passwords do not match.');
-            return;
-        }
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const userDocRef = doc(db, 'users', userCredential.user.uid);
-            await setDoc(userDocRef, {
-                uid: userCredential.user.uid,
-                name: name,
-                email: email,
-                role: role,
-                batch: batch
-            });
-
-            if (role === 'User' || role === 'Admin') {
-                const cadetDocRef = doc(collection(db, 'cadets'));
-                await setDoc(cadetDocRef, {
-                    id: cadetDocRef.id,
-                    name: name,
-                    regimentalNo: '',
-                    rollNo: '',
-                    batch: batch
-                });
-            }
-
-            closeSignupModal();
-            alert('Account created and logged in!');
-        } catch (error) {
-            alert(`Signup failed: ${error.message}`);
-        }
     }
 
     window.logout = async function() {
@@ -1002,6 +890,7 @@
     setInterval(updateDateTime, 1000);
 
     window.showPage = function(pageId) {
+        currentPage = pageId;
         const pages = document.querySelectorAll('.page-content');
         pages.forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
@@ -1012,8 +901,6 @@
     }
 
     // Tab 1: Task Manager Functions
-    let currentTask = null;
-
     window.addTask = async function() {
         const taskName = document.getElementById('taskName').value;
         const taskDescription = document.getElementById('taskDescription').value;
@@ -1024,11 +911,6 @@
         if (taskName === '') {
             alert('Task name cannot be empty!');
             return;
-        }
-        
-        if (!currentUser) {
-             alert('You must be logged in to add tasks.');
-             return;
         }
 
         await addDoc(collection(db, 'tasks'), {
