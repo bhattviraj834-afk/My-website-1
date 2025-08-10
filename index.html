@@ -1,331 +1,1283 @@
-import { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, signInAnonymously } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from 'firebase/firestore';
-
-// YOUR FIREBASE CONFIGURATION
-const firebaseConfig = {
-  apiKey: "AIzaSyDIUExlm-FIAxznN5Ww4_mOeyXFtSioNa8",
-  authDomain: "ncc-nu.firebaseapp.com",
-  projectId: "ncc-nu",
-  storageBucket: "ncc-nu.firebasestorage.app",
-  messagingSenderId: "938964283399",
-  appId: "1:938964283399:web:63c50a9f824b0e82503aa2"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-const App = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState('home');
-  const [sidebarActive, setSidebarActive] = useState(false);
-  const [datetime, setDatetime] = useState('');
-  const [userRole, setUserRole] = useState('');
-  const [userBatch, setUserBatch] = useState('');
-
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [signupModalOpen, setSignupModalOpen] = useState(false);
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupRePassword, setSignupRePassword] = useState('');
-  const [signupRole, setSignupRole] = useState('User');
-  const [signupBatch, setSignupBatch] = useState('SD 2026');
-
-  const [cadets, setCadets] = useState({
-    'SD 2026': [],
-    'SD 2027': [],
-    'SW 2026': [],
-    'SW 2027': [],
-  });
-
-  // Authentication Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-      if (authUser) {
-        const userDocRef = doc(db, 'users', authUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          setUser(userData);
-          setUserRole(userData.role);
-          setUserBatch(userData.batch);
-        } else {
-          const newUser = {
-            uid: authUser.uid,
-            name: 'Anonymous User',
-            email: authUser.email || 'N/A',
-            role: 'User',
-            batch: 'N/A',
-          };
-          await setDoc(userDocRef, newUser);
-          setUser(newUser);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Creative Website</title>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #50e3c2;
+            --background-color: #f7f9fc;
+            --text-color: #333;
+            --sidebar-bg: #1c2b53;
+            --card-bg: #ffffff;
+            --high-priority: #e74c3c;
+            --medium-priority: #f39c12;
+            --low-priority: #2ecc71;
+            --present-color: #2ecc71;
+            --absent-color: #e74c3c;
+            --font-family: 'Poppins', sans-serif;
         }
-      } else {
-        setUser(null);
-        setUserRole('');
-        setUserBatch('');
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth, db]);
 
-  // Real-time Cadet Data Listener
-  useEffect(() => {
-    if (user) {
-      const cadetsRef = collection(db, 'cadets');
-      const unsubscribe = onSnapshot(cadetsRef, (snapshot) => {
-        const newCadets = {
-          'SD 2026': [],
-          'SD 2027': [],
-          'SW 2026': [],
-          'SW 2027': [],
-        };
-        snapshot.forEach((doc) => {
-          const cadetData = doc.data();
-          if (newCadets[cadetData.batch]) {
-            newCadets[cadetData.batch].push(cadetData);
-          }
-        });
-        setCadets(newCadets);
-      });
-      return () => unsubscribe();
-    }
-  }, [user, db]);
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-  // Date and Time Update
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setDatetime(now.toLocaleString());
-    };
-    const interval = setInterval(updateTime, 1000);
-    updateTime();
-    return () => clearInterval(interval);
-  }, []);
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            text-align: center;
+        }
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-    } catch (error) {
-      alert(`Login failed: ${error.message}`);
-    }
-  };
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    if (signupPassword !== signupRePassword) {
-      alert('Passwords do not match.');
-      return;
-    }
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
-      const newUser = {
-        uid: userCredential.user.uid,
-        name: signupName,
-        email: signupEmail,
-        role: signupRole,
-        batch: signupBatch,
-      };
-      const userDocRef = doc(db, 'users', newUser.uid);
-      await setDoc(userDocRef, newUser);
+        /* Login Page Styles */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
 
-      const cadetDocRef = doc(collection(db, 'cadets'));
-      await setDoc(cadetDocRef, {
-        id: cadetDocRef.id,
-        name: signupName,
-        regimentalNo: '',
-        rollNo: '',
-        batch: signupBatch,
-      });
+        .auth-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+        }
 
-      setSignupModalOpen(false);
-      alert('Account created and logged in!');
-    } catch (error) {
-      alert(`Signup failed: ${error.message}`);
-    }
-  };
-  
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
+        .auth-box h1 {
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
 
-  const toggleSidebar = () => {
-    setSidebarActive(!sidebarActive);
-  };
+        .auth-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            font-size: 1em;
+            text-align: center;
+        }
 
-  const showPage = (pageName) => {
-    setPage(pageName);
-    setSidebarActive(false);
-  };
+        .auth-box button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
 
-  const getPageContent = () => {
-    switch (page) {
-      case 'home':
-        return (
-          <>
-            <h1 className="text-3xl font-bold mb-4">Welcome, {user.name}!</h1>
-            <p className="mb-8">Your Role: {userRole}, Batch: {userBatch}</p>
-            <div className="flex flex-wrap justify-center space-x-4">
-              <button onClick={() => showPage('tab1')} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Tab 1</button>
-              <button onClick={() => showPage('tab2')} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Tab 2</button>
-              <button onClick={() => showPage('tab3')} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Tab 3</button>
-              <button onClick={() => showPage('tab4')} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Tab 4</button>
-            </div>
-          </>
-        );
-      case 'tab1':
-        return <h1 className="text-2xl font-bold">This is Tab 1</h1>;
-      case 'tab2':
-        return <h1 className="text-2xl font-bold">This is Tab 2</h1>;
-      case 'tab3':
-        return (
-          <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">Cadet Sections</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-              {['SD 2026', 'SD 2027', 'SW 2026', 'SW 2027'].map((batch) => (
-                <div key={batch} className="bg-gray-100 p-4 rounded-lg shadow-md">
-                  <h3 className="text-xl font-semibold mb-2">{batch}</h3>
-                  <ul className="list-disc list-inside text-left">
-                    {cadets[batch].map((cadet, index) => (
-                      <li key={index}>{cadet.name}</li>
-                    ))}
-                  </ul>
-                  <button onClick={() => alert(`Add Cadet for ${batch}`)} className="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Add Cadet</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 'tab4':
-        return <h1 className="text-2xl font-bold">This is Tab 4</h1>;
-      default:
-        return null;
-    }
-  };
+        .auth-box button:hover {
+            background-color: #3b74c2;
+        }
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+        .auth-links {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-          <h2 className="text-3xl font-bold text-center text-gray-900">Welcome</h2>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <button type="submit" className="w-full py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">Login</button>
-          </form>
-          <div className="flex items-center justify-between">
-            <a href="#" className="text-sm text-blue-600 hover:underline">Forgot password?</a>
-            <button onClick={() => setSignupModalOpen(true)} className="text-sm text-blue-600 hover:underline">New user? Sign up!</button>
-          </div>
+        .auth-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: text-decoration 0.2s;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Main App Styles */
+        .main-app {
+            display: none;
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            background-color: var(--sidebar-bg);
+            overflow-x: hidden;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            text-align: left;
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 36px;
+            color: #b0bec5;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h2 { margin: 0; font-size: 1.5em; }
+        .sidebar-header p { margin: 5px 0 0; font-size: 0.9em; opacity: 0.7; }
+
+        .sidebar-nav { padding-top: 20px; }
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 16px;
+            color: #b0bec5;
+            display: block;
+            transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .datetime-container {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1em;
+            color: #b0bec5;
+        }
+
+        .datetime-container #date { font-weight: bold; }
+        .datetime-container #time { font-size: 0.9em; }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .header-bar {
+            background-color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--primary-color);
+            margin-right: 20px;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 600;
+            width: 100%;
+            text-align: center;
+        }
+
+        .page-content {
+            display: none;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        .page-content.active {
+            display: block;
+        }
+
+        .tabs-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .tab-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 20px 0;
+            font-size: 1.1em;
+            cursor: pointer;
+            border-radius: 10px;
+            margin: 10px;
+            width: calc(50% - 20px);
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .back-button {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
+        
+        /* Tab 1: Task Manager Styles */
+        .task-form-container {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .task-form-container .form-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .task-form-container .form-group label {
+            margin-right: 10px;
+        }
+
+        .task-form-container input, .task-form-container select, .task-form-container textarea, .task-form-container button {
+            width: 80%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .task-form-container .date-input-group {
+            display: flex;
+            flex-direction: column; /* Changed to column for mobile layout */
+            align-items: center;
+            gap: 10px;
+        }
+        .task-form-container .date-input-group label {
+            text-align: center;
+            width: auto;
+        }
+        .task-form-container .date-input-group input {
+            width: 100%;
+        }
+        .task-form-container button {
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+        }
+
+        .task-sections {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .task-column {
+            background-color: #f7f9fc;
+            padding: 15px;
+            border-radius: 10px;
+            width: calc(33.333% - 10px);
+            margin: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .task-column h3 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+            font-weight: 600;
+        }
+
+        .task-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .task-card-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin: 0;
+            text-align: left;
+        }
+
+        .task-card .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .task-card .priority-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 3px rgba(0,0,0,0.3);
+        }
+
+        .priority-circle.High { background-color: var(--high-priority); }
+        .priority-circle.Medium { background-color: var(--medium-priority); }
+        .priority-circle.Low { background-color: var(--low-priority); }
+
+        .task-card .info-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .task-card .info-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: left;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .close-modal-btn {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .task-details p {
+            margin: 5px 0;
+        }
+        .task-details span {
+            font-weight: 600;
+        }
+        .task-details .priority-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 15px;
+            color: white;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .priority-tag.High { background-color: var(--high-priority); }
+        .priority-tag.Medium { background-color: var(--medium-priority); }
+        .priority-tag.Low { background-color: var(--low-priority); }
+
+        .task-actions-modal button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+
+        .task-actions-modal button:hover {
+            transform: translateY(-2px);
+        }
+
+        .task-actions-modal .delete-btn {
+            background-color: var(--high-priority);
+        }
+
+        /* Sign-up Modal */
+        #signupModal .modal-content {
+            text-align: center;
+        }
+        #signupModal h2 {
+            margin-bottom: 20px;
+        }
+        #signupModal input, #signupModal select {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        #signupModal button {
+            width: 90%;
+            padding: 10px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #signupModal button:hover {
+            background-color: #3b74c2;
+        }
+
+        /* Tab 3 Cadet Styles */
+        .cadet-sections {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .cadet-section {
+            width: calc(50% - 20px);
+            margin: 10px;
+            padding: 15px;
+            background-color: #f7f9fc;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .cadet-section h3 {
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .cadet-list-item {
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: left;
+            font-size: 0.9em;
+        }
+        .add-cadet-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .add-cadet-btn:hover {
+            background-color: #27ae60;
+        }
+        #addCadetModal .modal-content {
+            text-align: center;
+        }
+        #addCadetModal input {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        #addCadetModal button {
+            width: 90%;
+            padding: 10px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Tab 2 Attendance Styles */
+        #attendance-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .attendance-form-group {
+            margin-bottom: 15px;
+            text-align: left;
+            width: 80%;
+            max-width: 400px;
+        }
+        .attendance-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .attendance-form-group input[type="date"], .attendance-form-group select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        .attendance-form-group .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .attendance-list-container {
+            margin-top: 20px;
+        }
+        .attendance-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f0f2f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .attendance-list-item input[type="text"] {
+            width: 120px;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        .attendance-status-group {
+            display: flex;
+            align-items: center;
+        }
+        .attendance-status-group label {
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+        .attendance-status-group input[type="radio"] {
+            margin: 0 5px 0 0;
+        }
+        .save-attendance-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .save-attendance-btn:hover {
+            background-color: #27ae60;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Login & Sign-up Section -->
+<div id="auth-section" class="auth-container">
+    <div class="auth-box">
+        <h1>Welcome to My Site</h1>
+        <form onsubmit="event.preventDefault(); login()">
+            <input type="email" id="loginEmail" placeholder="Enter Email" required>
+            <input type="password" id="loginPassword" placeholder="Enter Password" required>
+            <button type="submit">Log In</button>
+        </form>
+        <div class="auth-links">
+            <a href="#" onclick="alert('This is a simulated feature. In a real app, you would be sent a reset link via email.'); return false;">Forgot password?</a>
+            <a href="#" onclick="showSignupModal(); return false;">New user? Sign Up!</a>
         </div>
-
-        {signupModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
-              <h2 className="text-2xl font-bold text-center text-gray-900">Sign Up</h2>
-              <form onSubmit={handleSignup} className="mt-4 space-y-4">
-                <div>
-                  <input type="text" placeholder="Full Name" value={signupName} onChange={(e) => setSignupName(e.target.value)} className="w-full px-4 py-2 border rounded-lg" required />
-                </div>
-                <div>
-                  <input type="email" placeholder="Email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} className="w-full px-4 py-2 border rounded-lg" required />
-                </div>
-                <div>
-                  <input type="password" placeholder="Password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} className="w-full px-4 py-2 border rounded-lg" required />
-                </div>
-                <div>
-                  <input type="password" placeholder="Re-enter Password" value={signupRePassword} onChange={(e) => setSignupRePassword(e.target.value)} className="w-full px-4 py-2 border rounded-lg" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Role</label>
-                  <select value={signupRole} onChange={(e) => setSignupRole(e.target.value)} className="w-full px-4 py-2 border rounded-lg">
-                    <option value="User">User</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Alumni">Alumni</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Batch</label>
-                  <select value={signupBatch} onChange={(e) => setSignupBatch(e.target.value)} className="w-full px-4 py-2 border rounded-lg">
-                    <option value="SD 2026">SD 2026</option>
-                    <option value="SD 2027">SD 2027</option>
-                    <option value="SW 2026">SW 2026</option>
-                    <option value="SW 2027">SW 2027</option>
-                  </select>
-                </div>
-                <div className="flex justify-between items-center">
-                  <button type="submit" className="flex-1 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 mr-2">Sign Up</button>
-                  <button type="button" onClick={() => setSignupModalOpen(false)} className="flex-1 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className={`fixed inset-y-0 left-0 z-50 transform ${sidebarActive ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out bg-gray-800 text-white w-64 p-4 shadow-lg`}>
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-xl font-bold">My Website</h1>
-          <button onClick={toggleSidebar} className="text-2xl md:hidden">&times;</button>
-        </div>
-        <div className="mb-8">
-          <p className="text-sm">Logged in as:</p>
-          <h2 className="text-lg font-semibold">{user.name}</h2>
-          <p className="text-xs text-gray-400">({user.email})</p>
-          <button onClick={handleLogout} className="mt-2 text-xs bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-lg">Logout</button>
-        </div>
-        <nav className="space-y-2">
-          <a onClick={() => showPage('home')} className="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-gray-700 hover:text-white cursor-pointer">Home</a>
-          <a onClick={() => showPage('tab1')} className="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-gray-700 hover:text-white cursor-pointer">Tab 1</a>
-          <a onClick={() => showPage('tab2')} className="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-gray-700 hover:text-white cursor-pointer">Tab 2</a>
-          <a onClick={() => showPage('tab3')} className="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-gray-700 hover:text-white cursor-pointer">Tab 3</a>
-          <a onClick={() => showPage('tab4')} className="block py-2.5 px-4 rounded-lg transition duration-200 hover:bg-gray-700 hover:text-white cursor-pointer">Tab 4</a>
-        </nav>
-      </div>
-      <div className="flex-1 transition-all duration-300 ease-in-out p-4">
-        <header className="flex items-center p-4 bg-white shadow-md rounded-lg mb-4">
-          <button onClick={toggleSidebar} className="text-gray-600 text-2xl mr-4 md:hidden">☰</button>
-          <h1 className="text-xl font-semibold flex-1 text-center">My Website</h1>
-        </header>
-        <main className="bg-white p-6 rounded-lg shadow-md">
-          {getPageContent()}
-        </main>
-      </div>
+        <button onclick="bypassAuth()" style="margin-top: 20px;">Go to Website</button>
     </div>
-  );
-};
+</div>
 
-export default App;
+<!-- Main App Section -->
+<div id="main-app" class="main-app">
+    <div class="sidebar" id="sidebar">
+        <a href="javascript:void(0)" class="close-btn" onclick="toggleNav()">×</a>
+        <div class="sidebar-header">
+            <h2><span id="userNameDisplay">My name</span></h2>
+            <p>Admin</p>
+        </div>
+        <div class="datetime-container">
+            <div id="date"></div>
+            <div id="time"></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a onclick="showPage('home')">Home</a>
+            <a onclick="showPage('tab1')">Tab 1</a>
+            <a onclick="showPage('tab2')">Tab 2</a>
+            <a onclick="showPage('tab3')">Tab 3</a>
+            <a onclick="showPage('tab4')">Tab 4</a>
+        </nav>
+    </div>
+
+    <div id="main" class="container">
+        <div class="header-bar">
+            <span class="toggle-btn" onclick="toggleNav()">☰</span>
+            <h1 class="header-title">My Creative Website</h1>
+        </div>
+
+        <!-- Home Page Content -->
+        <div id="home" class="page-content active">
+            <h1>Welcome!</h1>
+            <p>Select a tab to navigate.</p>
+            <div class="tabs-container">
+                <button class="tab-button" onclick="showPage('tab1')">Tab 1</button>
+                <button class="tab-button" onclick="showPage('tab2')">Tab 2</button>
+                <button class="tab-button" onclick="showPage('tab3')">Tab 3</button>
+                <button class="tab-button" onclick="showPage('tab4')">Tab 4</button>
+            </div>
+        </div>
+
+        <!-- Tab 1: Task Manager -->
+        <div id="tab1" class="page-content">
+            <h2>Task Manager</h2>
+            <div class="task-form-container">
+                <input type="text" id="taskName" placeholder="Task Name">
+                <textarea id="taskDescription" placeholder="Task Description" rows="3"></textarea>
+                <div class="date-input-group">
+                    <label for="startDate">Start Date:</label>
+                    <input type="date" id="startDate">
+                    <label for="endDate">End Date:</label>
+                    <input type="date" id="endDate">
+                </div>
+                <select id="taskPriority">
+                    <option value="Low">Low Priority</option>
+                    <option value="Medium">Medium Priority</option>
+                    <option value="High">High Priority</option>
+                </select>
+                <button onclick="addTask()">Add Task</button>
+            </div>
+            
+            <div class="task-sections">
+                <div class="task-column">
+                    <h3>To be started</h3>
+                    <div id="toDoTasks"></div>
+                </div>
+                <div class="task-column">
+                    <h3>In Progress</h3>
+                    <div id="inProgressTasks"></div>
+                </div>
+                <div class="task-column">
+                    <h3>Completed</h3>
+                    <div id="completedTasks"></div>
+                </div>
+            </div>
+            <button class="back-button" onclick="goBack()">Back</button>
+        </div>
+
+        <!-- Tab 2: Attendance Section -->
+        <div id="tab2" class="page-content">
+            <h2>Attendance</h2>
+            <div id="attendance-form">
+                <div class="attendance-form-group">
+                    <label for="attendanceDate">Select Date:</label>
+                    <input type="date" id="attendanceDate">
+                </div>
+                <div class="attendance-form-group">
+                    <label>Select Cadet Sections:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="cadetSection" value="SD 2026"> SD 2026</label>
+                        <label><input type="checkbox" name="cadetSection" value="SD 2027"> SD 2027</label>
+                        <label><input type="checkbox" name="cadetSection" value="SW 2026"> SW 2026</label>
+                        <label><input type="checkbox" name="cadetSection" value="SW 2027"> SW 2027</label>
+                    </div>
+                </div>
+                <button onclick="generateAttendanceList()">Confirm</button>
+            </div>
+
+            <div id="attendanceList" class="attendance-list-container"></div>
+            <button id="saveAttendanceBtn" class="save-attendance-btn" style="display: none;" onclick="saveAttendance()">Save Attendance</button>
+            
+            <button class="back-button" onclick="goBack()">Back</button>
+        </div>
+
+        <!-- Tab 3: Cadet's Section -->
+        <div id="tab3" class="page-content">
+            <h2>Cadet's Section</h2>
+            <div class="cadet-sections">
+                <div class="cadet-section">
+                    <h3>SD 2026</h3>
+                    <div id="sd2026-list"></div>
+                    <button class="add-cadet-btn" onclick="showAddCadetModal('SD 2026')">Add Cadet</button>
+                </div>
+                <div class="cadet-section">
+                    <h3>SD 2027</h3>
+                    <div id="sd2027-list"></div>
+                    <button class="add-cadet-btn" onclick="showAddCadetModal('SD 2027')">Add Cadet</button>
+                </div>
+                <div class="cadet-section">
+                    <h3>SW 2026</h3>
+                    <div id="sw2026-list"></div>
+                    <button class="add-cadet-btn" onclick="showAddCadetModal('SW 2026')">Add Cadet</button>
+                </div>
+                <div class="cadet-section">
+                    <h3>SW 2027</h3>
+                    <div id="sw2027-list"></div>
+                    <button class="add-cadet-btn" onclick="showAddCadetModal('SW 2027')">Add Cadet</button>
+                </div>
+            </div>
+            <button class="back-button" onclick="goBack()">Back</button>
+        </div>
+
+        <!-- Tab 4 Page Content -->
+        <div id="tab4" class="page-content">
+            <h2>Tab 4</h2>
+            <p>This is the content for Tab 4.</p>
+            <button class="back-button" onclick="goBack()">Back</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Task Details Modal -->
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-task-name"></h2>
+            <span class="close-modal-btn" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="task-details">
+            <p><span>Description:</span> <span id="modal-task-description"></span></p>
+            <p><span>Start Date:</span> <span id="modal-start-date"></span></p>
+            <p><span>End Date:</span> <span id="modal-end-date"></span></p>
+            <p><span>Priority:</span> <span id="modal-priority"></span></p>
+        </div>
+        <div class="task-actions-modal">
+            <button onclick="moveTaskFromModal('toDo')">To be started</button>
+            <button onclick="moveTaskFromModal('inProgress')">In Progress</button>
+            <button onclick="moveTaskFromModal('completed')">Completed</button>
+            <button class="delete-btn" onclick="deleteTaskFromModal()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Sign-up Modal -->
+<div id="signupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Sign Up</h2>
+            <span class="close-modal-btn" onclick="closeSignupModal()">&times;</span>
+        </div>
+        <input type="text" id="signupName" placeholder="Enter Your Name">
+        <input type="email" id="signupEmail" placeholder="Enter Email">
+        <input type="password" id="signupPassword" placeholder="Create Password">
+        <input type="password" id="signupRePassword" placeholder="Re-enter Password">
+        <div style="text-align: left; width: 90%; margin: 0 auto;">
+            <label for="signupRole">Role:</label>
+            <select id="signupRole" style="width: 100%; text-align: left;">
+                <option value="User">User</option>
+                <option value="Admin">Admin</option>
+                <option value="Alumni">Alumni</option>
+            </select>
+        </div>
+        <div style="text-align: left; width: 90%; margin: 10px auto;">
+            <label for="signupBatch">Batch:</label>
+            <select id="signupBatch" style="width: 100%; text-align: left;">
+                <option value="SD 2026">SD 2026</option>
+                <option value="SD 2027">SD 2027</option>
+                <option value="SW 2026">SW 2026</option>
+                <option value="SW 2027">SW 2027</option>
+            </select>
+        </div>
+        <button onclick="signup()">Confirm</button>
+    </div>
+</div>
+
+<!-- Add Cadet Modal -->
+<div id="addCadetModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Cadet</h2>
+            <span class="close-modal-btn" onclick="closeAddCadetModal()">&times;</span>
+        </div>
+        <input type="hidden" id="cadetSectionInput">
+        <input type="text" id="cadetName" placeholder="Name">
+        <input type="text" id="cadetRegNo" placeholder="Regimental No.">
+        <input type="text" id="cadetRollNo" placeholder="Roll No.">
+        <button onclick="addCadet()">Save</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDIUExlm-FIAxznN5Ww4_mOeyXFtSioNa8",
+      authDomain: "ncc-nu.firebaseapp.com",
+      projectId: "ncc-nu",
+      storageBucket: "ncc-nu.firebasestorage.app",
+      messagingSenderId: "938964283399",
+      appId: "1:938964283399:web:63c50a9f824b0e82503aa2"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let cadets = {};
+    let users = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    currentUser = userDocSnap.data();
+                    showMainApp();
+                } else {
+                    // Force logout if user exists in auth but not in DB
+                    auth.signOut();
+                }
+            } else {
+                currentUser = null;
+                showAuthSection();
+            }
+        });
+        setupRealtimeListeners();
+    });
+
+    function showAuthSection() {
+        document.getElementById('auth-section').style.display = 'flex';
+        document.getElementById('main-app').style.display = 'none';
+    }
+
+    function showMainApp() {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('userNameDisplay').textContent = currentUser.name;
+        renderTasks();
+        renderCadets();
+        updateDateTime();
+    }
+    
+    function setupRealtimeListeners() {
+        // Real-time listener for cadets
+        const cadetsRef = collection(db, 'cadets');
+        onSnapshot(cadetsRef, (snapshot) => {
+            const newCadets = {
+                'SD 2026': [],
+                'SD 2027': [],
+                'SW 2026': [],
+                'SW 2027': []
+            };
+            snapshot.forEach((doc) => {
+                const cadetData = doc.data();
+                if (newCadets[cadetData.batch]) {
+                    newCadets[cadetData.batch].push(cadetData);
+                }
+            });
+            cadets = newCadets;
+            if (currentUser) renderCadets();
+        });
+
+        // Real-time listener for tasks (user-specific)
+        if (currentUser) {
+            const tasksRef = collection(db, 'tasks');
+            const userTasksQuery = query(tasksRef, where('userId', '==', currentUser.uid));
+            onSnapshot(userTasksQuery, (snapshot) => {
+                currentUser.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTasks();
+            });
+        }
+    }
+
+    window.login = async function() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            alert(`Login failed: ${error.message}`);
+        }
+    }
+
+    window.showSignupModal = function() {
+        document.getElementById('signupModal').style.display = 'block';
+    }
+
+    window.closeSignupModal = function() {
+        document.getElementById('signupModal').style.display = 'none';
+    }
+
+    window.signup = async function() {
+        const name = document.getElementById('signupName').value;
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const rePassword = document.getElementById('signupRePassword').value;
+        const role = document.getElementById('signupRole').value;
+        const batch = document.getElementById('signupBatch').value;
+
+        if (!name || !email || !password || !rePassword || !role || !batch) {
+            alert('Please fill in all fields.');
+            return;
+        }
+
+        if (password !== rePassword) {
+            alert('Passwords do not match.');
+            return;
+        }
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userDocRef = doc(db, 'users', userCredential.user.uid);
+            await setDoc(userDocRef, {
+                uid: userCredential.user.uid,
+                name: name,
+                email: email,
+                role: role,
+                batch: batch
+            });
+
+            // Add new user as a cadet
+            const cadetDocRef = doc(collection(db, 'cadets'));
+            await setDoc(cadetDocRef, {
+                id: cadetDocRef.id,
+                name: name,
+                regimentalNo: '',
+                rollNo: '',
+                batch: batch
+            });
+
+            closeSignupModal();
+            alert('Account created and logged in!');
+        } catch (error) {
+            alert(`Signup failed: ${error.message}`);
+        }
+    }
+
+    window.logout = async function() {
+        await auth.signOut();
+    }
+
+    window.toggleNav = function() {
+        document.getElementById("sidebar").classList.toggle('active');
+    }
+
+    function updateDateTime() {
+        const now = new Date();
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        
+        document.getElementById('date').innerHTML = now.toLocaleDateString(undefined, dateOptions);
+        document.getElementById('time').innerHTML = now.toLocaleTimeString(undefined, timeOptions);
+    }
+    setInterval(updateDateTime, 1000);
+
+    window.showPage = function(pageId) {
+        const pages = document.querySelectorAll('.page-content');
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    window.goBack = function() {
+        showPage('home');
+    }
+
+    // Tab 1: Task Manager Functions
+    let currentTask = null;
+
+    window.addTask = async function() {
+        const taskName = document.getElementById('taskName').value;
+        const taskDescription = document.getElementById('taskDescription').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const priority = document.getElementById('taskPriority').value;
+
+        if (taskName === '') {
+            alert('Task name cannot be empty!');
+            return;
+        }
+        
+        if (!currentUser) {
+             alert('You must be logged in to add tasks.');
+             return;
+        }
+
+        await addDoc(collection(db, 'tasks'), {
+            userId: currentUser.uid,
+            name: taskName,
+            description: taskDescription,
+            startDate: startDate,
+            endDate: endDate,
+            priority: priority,
+            status: 'toDo'
+        });
+
+        document.getElementById('taskName').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+    }
+
+    function renderTasks() {
+        document.getElementById('toDoTasks').innerHTML = '';
+        document.getElementById('inProgressTasks').innerHTML = '';
+        document.getElementById('completedTasks').innerHTML = '';
+
+        if (!currentUser || !currentUser.tasks) return;
+
+        currentUser.tasks.forEach(task => {
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('task-card');
+            taskCard.innerHTML = `
+                <div style="display: flex; align-items: center;">
+                    <span class="priority-circle ${task.priority}"></span>
+                    <div class="task-card-title">${task.name}</div>
+                </div>
+                <button class="info-btn" onclick="showTaskDetails('${task.id}')">i</button>
+            `;
+
+            if (task.status === 'toDo') {
+                document.getElementById('toDoTasks').appendChild(taskCard);
+            } else if (task.status === 'inProgress') {
+                document.getElementById('inProgressTasks').appendChild(taskCard);
+            } else if (task.status === 'completed') {
+                document.getElementById('completedTasks').appendChild(taskCard);
+            }
+        });
+    }
+
+    window.showTaskDetails = function(taskId) {
+        const task = currentUser.tasks.find(t => t.id === taskId);
+        currentTask = task;
+        if (task) {
+            document.getElementById('modal-task-name').textContent = task.name;
+            document.getElementById('modal-task-description').textContent = task.description || 'No description provided.';
+            document.getElementById('modal-start-date').textContent = task.startDate || 'N/A';
+            document.getElementById('modal-end-date').textContent = task.endDate || 'N/A';
+            document.getElementById('modal-priority').innerHTML = `<span class="priority-tag ${task.priority}">${task.priority}</span>`;
+            document.getElementById('taskModal').style.display = 'block';
+        }
+    }
+
+    window.closeModal = function() {
+        document.getElementById('taskModal').style.display = 'none';
+        currentTask = null;
+    }
+
+    window.moveTaskFromModal = async function(newStatus) {
+        if (!currentTask) return;
+        const taskDocRef = doc(db, 'tasks', currentTask.id);
+        await updateDoc(taskDocRef, { status: newStatus });
+        closeModal();
+    }
+
+    window.deleteTaskFromModal = async function() {
+        if (!currentTask) return;
+        const taskDocRef = doc(db, 'tasks', currentTask.id);
+        await deleteDoc(taskDocRef);
+        closeModal();
+    }
+
+    // Tab 3: Cadet's Section Functions
+    window.renderCadets = function() {
+        const sections = ['SD 2026', 'SD 2027', 'SW 2026', 'SW 2027'];
+        sections.forEach(section => {
+            const listElement = document.getElementById(section.replace(/\s/g, '').toLowerCase() + '-list');
+            if (listElement) {
+                listElement.innerHTML = '';
+                const cadetsInSection = cadets[section] || [];
+                cadetsInSection.forEach(cadet => {
+                    const cadetItem = document.createElement('div');
+                    cadetItem.classList.add('cadet-list-item');
+                    cadetItem.innerHTML = `${cadet.name} (${cadet.regNo})`;
+                    listElement.appendChild(cadetItem);
+                });
+            }
+        });
+    }
+
+    window.showAddCadetModal = function(section) {
+        document.getElementById('cadetSectionInput').value = section;
+        document.getElementById('addCadetModal').style.display = 'block';
+    }
+
+    window.closeAddCadetModal = function() {
+        document.getElementById('addCadetModal').style.display = 'none';
+        document.getElementById('cadetName').value = '';
+        document.getElementById('cadetRegNo').value = '';
+        document.getElementById('cadetRollNo').value = '';
+    }
+
+    window.addCadet = async function() {
+        const name = document.getElementById('cadetName').value;
+        const regNo = document.getElementById('cadetRegNo').value;
+        const rollNo = document.getElementById('cadetRollNo').value;
+        const section = document.getElementById('cadetSectionInput').value;
+
+        if (!name || !regNo || !rollNo) {
+            alert('All fields are required!');
+            return;
+        }
+
+        const cadetDocRef = doc(collection(db, 'cadets'));
+        await setDoc(cadetDocRef, {
+            id: cadetDocRef.id,
+            name: name,
+            regimentalNo: regNo,
+            rollNo: rollNo,
+            batch: section,
+        });
+
+        closeAddCadetModal();
+    }
+
+    // Tab 2: Attendance Section Functions
+    let attendanceData = {};
+    let attendanceDate = null;
+    let selectedCadetList = [];
+
+    window.generateAttendanceList = function() {
+        const dateInput = document.getElementById('attendanceDate').value;
+        const selectedSections = Array.from(document.querySelectorAll('input[name="cadetSection"]:checked')).map(cb => cb.value);
+        const attendanceListContainer = document.getElementById('attendanceList');
+        attendanceListContainer.innerHTML = '';
+        attendanceData = {};
+
+        if (!dateInput || selectedSections.length === 0) {
+            alert('Please select a date and at least one cadet section.');
+            return;
+        }
+        attendanceDate = dateInput;
+
+        let cadetsToMark = [];
+        selectedSections.forEach(section => {
+            cadetsToMark = cadetsToMark.concat(cadets[section] || []);
+        });
+
+        if (cadetsToMark.length === 0) {
+            attendanceListContainer.innerHTML = '<p>No cadets found in the selected sections.</p>';
+            document.getElementById('saveAttendanceBtn').style.display = 'none';
+            return;
+        }
+
+        selectedCadetList = cadetsToMark;
+
+        selectedCadetList.forEach(cadet => {
+            const listItem = document.createElement('div');
+            listItem.classList.add('attendance-list-item');
+            listItem.innerHTML = `
+                <span>${cadet.name} (${cadet.regNo})</span>
+                <div class="attendance-status-group">
+                    <label><input type="radio" name="status-${cadet.id}" value="Present" checked> Present</label>
+                    <label><input type="radio" name="status-${cadet.id}" value="Absent"> Absent</label>
+                </div>
+                <input type="text" placeholder="Remarks" data-cadet-id="${cadet.id}">
+            `;
+            attendanceListContainer.appendChild(listItem);
+        });
+
+        document.getElementById('saveAttendanceBtn').style.display = 'block';
+    }
+
+    window.saveAttendance = async function() {
+        if (!attendanceDate) {
+            alert('Please generate the attendance list first.');
+            return;
+        }
+
+        const attendanceRecords = selectedCadetList.map(cadet => {
+            const status = document.querySelector(`input[name="status-${cadet.id}"]:checked`).value;
+            const remark = document.querySelector(`input[type="text"][data-cadet-id="${cadet.id}"]`).value;
+            return {
+                id: cadet.id,
+                name: cadet.name,
+                regNo: cadet.regNo,
+                status: status,
+                remark: remark
+            };
+        });
+
+        const attendanceDocRef = doc(db, 'attendance', attendanceDate);
+        await setDoc(attendanceDocRef, { records: attendanceRecords });
+
+        alert('Attendance saved successfully!');
+        
+        document.getElementById('attendanceList').innerHTML = '';
+        document.getElementById('saveAttendanceBtn').style.display = 'none';
+        attendanceData = {};
+        attendanceDate = null;
+    }
+</script>
+
+</body>
+</html>
