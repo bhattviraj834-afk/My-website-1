@@ -786,6 +786,8 @@
             <div id="attendanceList" class="attendance-list-container"></div>
             <button id="saveAttendanceBtn" class="save-attendance-btn" style="display: none;" onclick="saveAttendance()">Save Attendance</button>
             
+            <div id="attendanceHistoryList" style="margin-top: 40px;"></div>
+            
             <button class="back-button" onclick="goBack()">Back</button>
         </div>
 
@@ -930,6 +932,13 @@
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
                     currentUser = userDocSnap.data();
+                    // Fetch user-specific tasks after user is authenticated
+                    const tasksRef = collection(db, 'tasks');
+                    const userTasksQuery = query(tasksRef, where('userId', '==', currentUser.uid));
+                    onSnapshot(userTasksQuery, (snapshot) => {
+                        currentUser.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderTasks();
+                    });
                     showMainApp();
                 } else {
                     auth.signOut();
@@ -960,6 +969,7 @@
     }
     
     function setupRealtimeListeners() {
+        // Real-time listener for cadets
         const cadetsRef = collection(db, 'cadets');
         onSnapshot(cadetsRef, (snapshot) => {
             const newCadets = {
@@ -975,14 +985,7 @@
             if (currentUser) renderCadets();
         });
 
-        const tasksRef = collection(db, 'tasks');
-        onSnapshot(tasksRef, (snapshot) => {
-            if (currentUser) {
-                currentUser.tasks = snapshot.docs.filter(doc => doc.data().userId === currentUser.uid).map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTasks();
-            }
-        });
-
+        // Real-time listener for attendance
         const attendanceRef = collection(db, 'attendance');
         onSnapshot(attendanceRef, (snapshot) => {
             attendanceData = {};
