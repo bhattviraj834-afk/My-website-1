@@ -652,4 +652,203 @@
     }
 
     function showMainApp() {
-        document.getElementById('auth-section
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        document.getElementById('userNameDisplay').textContent = currentUser.name;
+        // Re-render tasks for the logged in user
+        renderTasks();
+    }
+    
+    // TEMPORARY BYPASS
+    function bypassAuth() {
+        currentUser = users['test@example.com'];
+        sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+        showMainApp();
+    }
+
+    function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if (users[email] && users[email].password === password) {
+            currentUser = users[email];
+            sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+            showMainApp();
+        } else {
+            alert('Invalid email or password!');
+        }
+    }
+
+    function showSignupModal() {
+        document.getElementById('signupModal').style.display = 'block';
+    }
+
+    function closeSignupModal() {
+        document.getElementById('signupModal').style.display = 'none';
+    }
+
+    function signup() {
+        const name = document.getElementById('signupName').value;
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const rePassword = document.getElementById('signupRePassword').value;
+
+        if (!name || !email || !password || !rePassword) {
+            alert('Please fill in all fields.');
+            return;
+        }
+
+        if (password !== rePassword) {
+            alert('Passwords do not match.');
+            return;
+        }
+
+        if (users[email]) {
+            alert('An account with this email already exists.');
+            return;
+        }
+
+        users[email] = { name, email, password, tasks: [] };
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Account created successfully! You are now logged in.');
+        
+        currentUser = users[email];
+        sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+        closeSignupModal();
+        showMainApp();
+    }
+
+    // Main App Functions
+    function toggleNav() {
+        document.getElementById("sidebar").classList.toggle('active');
+    }
+
+    function updateDateTime() {
+        const now = new Date();
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        
+        document.getElementById('date').innerHTML = now.toLocaleDateString(undefined, dateOptions);
+        document.getElementById('time').innerHTML = now.toLocaleTimeString(undefined, timeOptions);
+    }
+
+    function showPage(pageId) {
+        const pages = document.querySelectorAll('.page-content');
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    function goBack() {
+        showPage('home');
+    }
+
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+    
+    // Task Manager Functions
+    let currentTask = null; // Used to track task in modal
+
+    function addTask() {
+        const taskName = document.getElementById('taskName').value;
+        const taskDescription = document.getElementById('taskDescription').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const priority = document.getElementById('taskPriority').value;
+
+        if (taskName === '') {
+            alert('Task name cannot be empty!');
+            return;
+        }
+
+        const task = {
+            id: Date.now(),
+            name: taskName,
+            description: taskDescription,
+            startDate: startDate,
+            endDate: endDate,
+            priority: priority,
+            status: 'toDo'
+        };
+
+        currentUser.tasks.push(task);
+        saveTasks();
+        renderTasks();
+
+        document.getElementById('taskName').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+    }
+    
+    function saveTasks() {
+        users[currentUser.email].tasks = currentUser.tasks;
+        localStorage.setItem('users', JSON.stringify(users));
+        sessionStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+    }
+
+    function renderTasks() {
+        document.getElementById('toDoTasks').innerHTML = '';
+        document.getElementById('inProgressTasks').innerHTML = '';
+        document.getElementById('completedTasks').innerHTML = '';
+
+        currentUser.tasks.forEach(task => {
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('task-card');
+            taskCard.innerHTML = `
+                <div style="display: flex; align-items: center;">
+                    <span class="priority-circle ${task.priority}"></span>
+                    <div class="task-card-title">${task.name}</div>
+                </div>
+                <button class="info-btn" onclick="showTaskDetails(${task.id})">i</button>
+            `;
+
+            if (task.status === 'toDo') {
+                document.getElementById('toDoTasks').appendChild(taskCard);
+            } else if (task.status === 'inProgress') {
+                document.getElementById('inProgressTasks').appendChild(taskCard);
+            } else if (task.status === 'completed') {
+                document.getElementById('completedTasks').appendChild(taskCard);
+            }
+        });
+    }
+
+    function showTaskDetails(taskId) {
+        const task = currentUser.tasks.find(t => t.id === taskId);
+        currentTask = task;
+        if (task) {
+            document.getElementById('modal-task-name').textContent = task.name;
+            document.getElementById('modal-task-description').textContent = task.description || 'No description provided.';
+            document.getElementById('modal-start-date').textContent = task.startDate || 'N/A';
+            document.getElementById('modal-end-date').textContent = task.endDate || 'N/A';
+            document.getElementById('modal-priority').innerHTML = `<span class="priority-tag ${task.priority}">${task.priority}</span>`;
+            document.getElementById('taskModal').style.display = 'block';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('taskModal').style.display = 'none';
+        currentTask = null;
+    }
+
+    function moveTaskFromModal(newStatus) {
+        if (!currentTask) return;
+        const taskIndex = currentUser.tasks.findIndex(t => t.id === currentTask.id);
+        if (taskIndex !== -1) {
+            currentUser.tasks[taskIndex].status = newStatus;
+            saveTasks();
+            renderTasks();
+            closeModal();
+        }
+    }
+
+    function deleteTaskFromModal() {
+        if (!currentTask) return;
+        currentUser.tasks = currentUser.tasks.filter(t => t.id !== currentTask.id);
+        saveTasks();
+        renderTasks();
+        closeModal();
+    }
+</script>
+
+</body>
+</html>
