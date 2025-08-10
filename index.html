@@ -932,7 +932,6 @@
                 const userDocSnap = await getDoc(userDocRef);
                 if (userDocSnap.exists()) {
                     currentUser = userDocSnap.data();
-                    // Fetch user-specific tasks after user is authenticated
                     const tasksRef = collection(db, 'tasks');
                     const userTasksQuery = query(tasksRef, where('userId', '==', currentUser.uid));
                     onSnapshot(userTasksQuery, (snapshot) => {
@@ -952,6 +951,7 @@
         updateDateTime();
     });
 
+    // Make functions globally accessible
     window.showAuthSection = function() {
         document.getElementById('auth-section').style.display = 'flex';
         document.getElementById('main-app').style.display = 'none';
@@ -969,7 +969,6 @@
     }
     
     window.setupRealtimeListeners = function() {
-        // Real-time listener for cadets
         const cadetsRef = collection(db, 'cadets');
         onSnapshot(cadetsRef, (snapshot) => {
             const newCadets = {
@@ -985,7 +984,6 @@
             if (currentUser) renderCadets();
         });
 
-        // Real-time listener for attendance
         const attendanceRef = collection(db, 'attendance');
         onSnapshot(attendanceRef, (snapshot) => {
             attendanceData = {};
@@ -1338,4 +1336,3 @@
 
 </body>
 </html>
-
