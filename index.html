@@ -45,7 +45,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            background: linear-gradient(135deg, #e0f2f1 0%, #bbdefb 100%); /* Lighter gradient */
         }
 
         .auth-box {
@@ -657,7 +657,6 @@
             <a href="#" onclick="alert('This is a simulated feature. In a real app, you would be sent a reset link via email.'); return false;">Forgot password?</a>
             <a href="#" onclick="showSignupModal(); return false;">New user? Sign Up!</a>
         </div>
-        <button onclick="bypassAuth()" style="margin-top: 20px;">Go to Website</button>
     </div>
 </div>
 
@@ -667,7 +666,7 @@
         <a href="javascript:void(0)" class="close-btn" onclick="toggleNav()">×</a>
         <div class="sidebar-header">
             <h2><span id="userNameDisplay">My name</span></h2>
-            <p>Admin</p>
+            <p id="userRoleBatchDisplay"></p>
         </div>
         <div class="datetime-container">
             <div id="date"></div>
@@ -679,6 +678,7 @@
             <a onclick="showPage('tab2')">Tab 2</a>
             <a onclick="showPage('tab3')">Tab 3</a>
             <a onclick="showPage('tab4')">Tab 4</a>
+            <a onclick="logout()">Logout</a>
         </nav>
     </div>
 
@@ -872,8 +872,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
     // Your Firebase configuration
     const firebaseConfig = {
@@ -923,6 +923,7 @@
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('userNameDisplay').textContent = currentUser.name;
+        document.getElementById('userRoleBatchDisplay').textContent = `${currentUser.role} - ${currentUser.batch}`;
         renderTasks();
         renderCadets();
         updateDateTime();
@@ -949,14 +950,12 @@
         });
 
         // Real-time listener for tasks (user-specific)
-        if (currentUser) {
-            const tasksRef = collection(db, 'tasks');
-            const userTasksQuery = query(tasksRef, where('userId', '==', currentUser.uid));
-            onSnapshot(userTasksQuery, (snapshot) => {
-                currentUser.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        onSnapshot(collection(db, 'tasks'), (snapshot) => {
+            if (currentUser) {
+                currentUser.tasks = snapshot.docs.filter(doc => doc.data().userId === currentUser.uid).map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTasks();
-            });
-        }
+            }
+        });
     }
 
     window.login = async function() {
@@ -1007,15 +1006,17 @@
                 batch: batch
             });
 
-            // Add new user as a cadet
-            const cadetDocRef = doc(collection(db, 'cadets'));
-            await setDoc(cadetDocRef, {
-                id: cadetDocRef.id,
-                name: name,
-                regimentalNo: '',
-                rollNo: '',
-                batch: batch
-            });
+            // Add new user as a cadet if they are a user or admin
+            if (role === 'User' || role === 'Admin') {
+                const cadetDocRef = doc(collection(db, 'cadets'));
+                await setDoc(cadetDocRef, {
+                    id: cadetDocRef.id,
+                    name: name,
+                    regimentalNo: '',
+                    rollNo: '',
+                    batch: batch
+                });
+            }
 
             closeSignupModal();
             alert('Account created and logged in!');
@@ -1025,7 +1026,7 @@
     }
 
     window.logout = async function() {
-        await auth.signOut();
+        await signOut(auth);
     }
 
     window.toggleNav = function() {
@@ -1206,7 +1207,7 @@
     let attendanceDate = null;
     let selectedCadetList = [];
 
-    window.generateAttendanceList = function() {
+    window.generateAttendanceList = async function() {
         const dateInput = document.getElementById('attendanceDate').value;
         const selectedSections = Array.from(document.querySelectorAll('input[name="cadetSection"]:checked')).map(cb => cb.value);
         const attendanceListContainer = document.getElementById('attendanceList');
